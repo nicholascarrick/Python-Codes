@@ -1,0 +1,159 @@
+import re
+import pandas as pd
+import os
+
+#adjust consonants or vowels accordingly from XSAMPA or other conventions
+#record changes here θ = T
+
+#Using Wiki phonology page, adjust sets according to import phonotactic features (maximal Syl structure, stress marking, etc.)
+consonants = ["p","b","f","m","t","d","T","n","s","l","rr","r","ñ","ch","ll","k","j","g","x"]
+vowels = ["i","e","a","o","u"]
+onset_clusters = ["pl","pr","br"]
+diphthongs = ["uo","ua","ue","ao","ia","ie","io","ió","ié"]
+accented_vowels = ["ó","á","é","í","ú"]
+final_C = ["n","l","s","r","d"]
+
+
+syllables = []
+
+#adjust for each syllable type (#ij , ij#, jij, special_clusters,etc.)
+
+# Spanish Syl = CCVVC, CCV, CV, CCV
+#initials
+for consonant in consonants: #simple Syl
+    for vowel in vowels:
+        syllables.append("#"+consonant+vowel)
+for consonant in consonants: #vowel initial syl
+    for vowel in vowels:
+        syllables.append("#"+vowel+consonant+vowel)
+for cluster in onset_clusters: #complex onset syl
+    for vowel in vowels:
+        syllables.append("#"+cluster+vowel)
+for consonant in consonants: #simple onset with diphthong nucleus
+    for diphthong in diphthongs:
+        syllables.append("#"+consonant+diphthong)
+for consonant in consonants: #simple onset with dipthon nucleus and final C
+    for diphthong in diphthongs:
+        for final_c in final_C:
+            syllables.append("#"+consonant+diphthong+final_c)
+for cluster in onset_clusters:
+    for diphthong in diphthongs:
+        syllables.append("#"+cluster+diphthong)
+for cluster in onset_clusters:
+    for diphthong in diphthongs:
+        for final_c in final_C:
+            syllables.append("#"+cluster+diphthong+final_c)
+for final_c in final_C: # vowel initial onsets with coda
+    for vowel in vowels:
+        for consonant in consonants:
+            syllables.append("#"+vowel+final_c+consonant+vowel)
+for final_c in final_C: # consonant initial onsets with coda
+    for vowel in vowels:
+        for consonant in consonants:
+            syllables.append("#"+consonant+vowel+final_c+consonant+vowel)       
+        
+# medial
+for consonant in consonants: #simple VCV
+    for vowel in vowels:
+        syllables.append(vowel+consonant+vowel) 
+for final_c in final_C:
+    for vowel in vowels:
+        for consonant in consonants:
+            syllables.append(vowel+final_c+consonant+vowel)  
+        
+#final
+        
+for consonant in consonants:
+    for vowel in vowels:
+        syllables.append(consonant+vowel+"#")
+for final_c in final_C:
+    for vowel in vowels:
+        syllables.append(vowel+final_c+"#")
+for final_vowel in accented_vowels:
+    syllables.append(final_vowel+"#")
+    
+for i in syllables:
+    if i.startswith("#r"):
+        del syllables[syllables.index(i)]    
+
+#update file name with golden script name/location
+file = open("es_lines.txt","r",encoding="UTF-8")
+spanish_lines= file.read()
+file.close()
+
+
+#adjust file to match 
+spanish_lines = re.sub(" |\n+|-","#",spanish_lines)
+
+punct = [",",":",";","(",")","%","_","-"]
+for i in punct:
+    spanish_lines = spanish_lines.replace(i,"")
+spanish_lines = re.sub("j","x",spanish_lines)
+spanish_lines = re.sub("ci","Ti",spanish_lines)
+spanish_lines = re.sub("ce","Te",spanish_lines)
+spanish_lines = re.sub("z","T",spanish_lines)
+spanish_lines = re.sub("#r","#rr",spanish_lines) 
+spanish_lines = spanish_lines.split(".")
+
+counts = {}
+for i in syllables:
+    for j in spanish_lines:
+        if i in counts:
+            counts[i] += len(re.findall(i, j))
+        else:
+            counts[i] = len(re.findall(i, j))
+            
+            
+#load and format es corpus
+file = open("dictionary_list.txt","r",encoding="utf-8")
+dictionary = file.read()
+file.close()
+dictionary = dictionary.split(",")
+dictionary = list(set(dictionary))
+
+#add function that takes opensource dict and find all instances of a given pattern with count 0 derived above
+zero_matches ={}
+for i in counts:
+    if counts[i]==0:
+        zero_matches[i] = 0
+
+for i in zero_matches:
+    matches = []
+    for j in dictionary:
+        if i.startswith("#") or i.endswith("#"):
+            if len(re.findall(i,j)) > 0:
+                matches.append(j)
+        elif not i.startswith("#") and not i.endswith("#"):
+            if i in j and  not "#"+i in j and not i+"#" in j:
+                matches.append(j)
+    zero_matches[i] = matches
+
+
+#add function that removes remaining count 0 derived above
+to_add = {}
+for i in zero_matches:
+    if len(zero_matches[i]) > 0:
+        to_add[i] = zero_matches[i]
+        
+        
+        
+#to export to an excel sheet 
+
+df = pd.DataFrame(data=counts, index=[0])
+
+df = (df.T)
+
+print (df)
+
+#replace langauge name
+df.to_excel('spanishDiphoneCount.xlsx')
+
+
+df = pd.DataFrame.from_dict(to_add, orient='index')
+
+df = (df.T)
+
+print (df)
+
+#replace langauge name
+df.to_excel('wordsToAddImproveDiphone.xlsx')
