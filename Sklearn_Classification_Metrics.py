@@ -1,4 +1,4 @@
-def evaluate_preds(y_true,y_pred):
+def evaluate_model(y_true,y_pred):
   metrics_dict = {}
 
   accuracy = round((accuracy_score(y_true,y_pred))*100,2)
