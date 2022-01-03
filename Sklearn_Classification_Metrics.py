@@ -1,3 +1,5 @@
+import sklearn.metrics
+
 def evaluate_model(y_true,y_pred):
   metrics_dict = {}
 
