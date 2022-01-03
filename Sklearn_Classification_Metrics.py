@@ -1,20 +1,18 @@
-from sklearn.metrics import *
-
-def evaluate_preds(model_name,y_pred,y_true):
+def evaluate_preds(y_true,y_pred):
   metrics_dict = {}
 
-  accuracy = accuracy_score(y_true,y_pred)
-  metrics_dict["accuracy"] = accuracy
+  accuracy = round((accuracy_score(y_true,y_pred))*100,2)
+  metrics_dict["accuracy"] = str(accuracy) + "%"
 
-  precision = precision_score(y_true,y_pred)
-  metrics_dict["precision"] = precision
+  precision = round((precision_score(y_true,y_pred))*100,2)
+  metrics_dict["precision"] = str(precision) + "%"
 
-  recall = recall_score(y_true,y_pred)
-  metrics_dict["recall"] = recall
+  recall = round((recall_score(y_true,y_pred))*100,2)
+  metrics_dict["recall"] = str(recall) + "%"
 
-  f1 = f1_score(y_true,y_pred)
-  metrics_dict["f1_score"] = f1
-  
+  f1 = round((f1_score(y_true,y_pred))*100,2)
+  metrics_dict["f1_score"] = str(f1) + "%"
+
   confuse = confusion_matrix(y_true,y_pred)
 
   return metrics_dict , confuse
