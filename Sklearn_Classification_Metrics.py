@@ -14,5 +14,7 @@ def evaluate_preds(model_name,y_pred,y_true):
 
   f1 = f1_score(y_true,y_pred)
   metrics_dict["f1_score"] = f1
+  
+  confuse = confusion_matrix(y_true,y_pred)
 
-  return metrics_dict
+  return metrics_dict , confuse
